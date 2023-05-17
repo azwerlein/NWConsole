@@ -7,6 +7,9 @@ using Microsoft.Extensions.Configuration.Json;
 
 namespace NWConsole.models
 {
+    /**
+     * This class was automatically generated using scaffolding
+     */
     public partial class NWContext : DbContext
     {
         public NWContext()
