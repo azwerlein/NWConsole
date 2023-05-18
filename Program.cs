@@ -26,6 +26,9 @@ public class Program
                 case "1":
                     AddProducts(db);
                     break;
+                case "2":
+                    EditProduct(db);
+                    break;
                 case "3":
                     DisplayProducts(db);
                     break;
@@ -39,6 +42,7 @@ public class Program
                     Console.WriteLine("Invalid response!");
                     break;
             }
+            Console.WriteLine("\n");
         }
 
         Console.WriteLine("Have a good one!");
@@ -122,7 +126,103 @@ public class Program
 
     private static void EditProduct(NWContext db)
     {
+        Product product = FindProduct(db);
+        if (product == null)
+        {
+            return;
+        }
 
+        Console.WriteLine("Enter '\\' for any field you don't want to change.");
+
+        string name = "";
+        while (name == "")
+        {
+            Console.Write("Product name: ");
+            name = Console.ReadLine();
+            if (name == "")
+            {
+                Console.WriteLine("Invalid response! The name can't be blank.");
+                Logger.Info($"Invalid response received for product name - {name}");
+            }
+            else if (name != "\\")
+            {
+                product.ProductName = name;
+            }
+        }
+
+        Console.Write("Supplier ID: ");
+        string supplier = Console.ReadLine();
+        if (supplier != "\\")
+        {
+            int supplierID;
+            int.TryParse(supplier, out supplierID);
+            product.SupplierId = supplierID;
+        }
+
+        Console.Write("Category ID: ");
+        string category = Console.ReadLine();
+        if (category != "\\")
+        {
+            int categoryID;
+            int.TryParse(category, out categoryID);
+            product.CategoryId = categoryID;
+        }
+
+        Console.Write("Quantity per unit: ");
+        string quantityPerUnit = Console.ReadLine();
+        if (quantityPerUnit != "\\")
+        {
+            product.QuantityPerUnit = quantityPerUnit;
+        }
+
+        Console.Write("Unit price: ");
+        string price = Console.ReadLine();
+        if (price != "\\")
+        {
+            decimal unitPrice;
+            decimal.TryParse(price, out unitPrice);
+            product.UnitPrice = unitPrice;
+        }
+
+        Console.Write("Units in stock: ");
+        string stock = Console.ReadLine();
+        if (stock != "\\")
+        {
+            short unitsInStock;
+            short.TryParse(stock, out unitsInStock);
+            product.UnitsInStock = unitsInStock;
+        }
+
+        Console.Write("Units on order: ");
+        string onOrder = Console.ReadLine();
+        if (onOrder != "\\")
+        {
+            short unitsOnOrder;
+            short.TryParse(onOrder, out unitsOnOrder);
+            product.UnitsOnOrder = unitsOnOrder;
+        }
+
+        Console.Write("Reorder level: ");
+        string reorder = Console.ReadLine();
+        if (reorder != "\\")
+        {
+            short reorderLevel;
+            short.TryParse(reorder, out reorderLevel);
+            product.ReorderLevel = reorderLevel;
+        }
+
+        Console.Write("Discontinued: ");
+        string discontinuedInput = Console.ReadLine();
+        if (discontinuedInput != "\\")
+        {
+            bool discontinued = false;
+            bool.TryParse(discontinuedInput, out discontinued);
+            product.Discontinued = discontinued;
+        }
+        
+        Console.WriteLine("\nNew product info:");
+        DisplayProductInfo(product);
+        db.SaveChanges();
     }
 
     /**
@@ -182,39 +282,21 @@ public class Program
         }
     }
 
-    private static void FindProduct(NWContext db)
+    private static Product FindProduct(NWContext db)
     {
-        var query = db.Products;
-        Console.WriteLine("Would you like to find a product by its ID or name?");
-        Console.WriteLine("1) ID");
-        Console.WriteLine("2) Name");
-        string response = Console.ReadLine().ToLower();
-        Product? product;
-        switch (response)
+        Product product = SearchByIdOrName(db);
+        if (product == null)
         {
-            case "1":
-                string id = Console.ReadLine().ToLower();
-                int number;
-                try
-                {
-                    number = int.Parse(id);
-                }
-                catch (Exception e)
-                {
-                    Logger.Error(e.Message);
-                    return;
-                }
-                product = query.Where(p => p.ProductId == number).FirstOrDefault();
-                break;
-            case "2":
-                product = query.Where(p => p.ProductName.ToLower() == response).FirstOrDefault();
-                break;
-            default:
-                Console.WriteLine("Invalid response!");
-                Logger.Error($"Invalid response {response} on find product prompt");
-                return;
+            return null;
         }
 
+        DisplayProductInfo(product);
+        return product;
+    }
+
+    private static void DisplayProductInfo(Product product)
+    {
+    
         Console.WriteLine($"Product ID: {product.ProductId}");
         Console.WriteLine($"Product Name: {product.ProductName}");
         Console.WriteLine($"Supplier ID: {product.SupplierId}");
@@ -225,5 +307,47 @@ public class Program
         Console.WriteLine($"Units on order: {product.UnitsOnOrder}");
         Console.WriteLine($"Reorder level: {product.ReorderLevel}");
         Console.WriteLine($"Discontinued: {product.Discontinued}");
+    }
+
+    private static Product SearchByIdOrName(NWContext db)
+    {
+        var query = db.Products;
+        Console.WriteLine("Would you like to find a product by its ID or name?");
+        Console.WriteLine("1) ID");
+        Console.WriteLine("2) Name");
+        string response = Console.ReadLine().ToLower();
+        Product? product;
+        switch (response)
+        {
+            case "1":
+                Console.Write("ID: ");
+                string id = Console.ReadLine().ToLower();
+                int number;
+                try
+                {
+                    number = int.Parse(id);
+                }
+                catch (Exception e)
+                {
+                    Logger.Error(e.Message);
+                    return null;
+                }
+                product = query.Where(p => p.ProductId == number).FirstOrDefault();
+                break;
+            case "2":
+                Console.Write("Name: ");
+                string name = Console.ReadLine().ToLower();
+                product = query.Where(p => p.ProductName.ToLower() == name).FirstOrDefault();
+                break;
+            default:
+                Console.WriteLine("Invalid response!");
+                Logger.Error($"Invalid response {response} on find product prompt");
+                return null;
+        }
+        if (product == null)
+        {
+            Logger.Info("There is no product that matches the given description.");
+        }
+        return product;
     }
 }
